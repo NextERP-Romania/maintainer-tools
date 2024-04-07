@@ -65,6 +65,11 @@ LICENSE_BADGES = {
         "http://www.gnu.org/licenses/gpl-3.0-standalone.html",
         "License: GPL-3",
     ),
+    "OPL-1": (
+        "https://img.shields.io/badge/licence-OPL--1-red.png",
+        "https://www.odoo.com/documentation/17.0/legal/licenses.html#odoo-apps",
+        "License: OPL-1",
+    ),
 }
 
 DEVELOPMENT_STATUS_BADGES = {
@@ -176,22 +181,22 @@ def generate_fragment(org_name, repo_name, branch, addon_name, file):
         "https://raw.githubusercontent.com/{org_name}/{repo_name}"
         "/{branch}/{addon_name}/".format(**locals())
     )
-    for index, fragment_line in enumerate(fragment_lines):
-        mo = image_path_re.match(fragment_line)
-        if not mo:
-            continue
-        path = mo.group("path")
+    # for index, fragment_line in enumerate(fragment_lines):
+    #     mo = image_path_re.match(fragment_line)
+    #     if not mo:
+    #         continue
+    #     path = mo.group("path")
 
-        if path.startswith("http"):
-            # It is already an absolute path
-            continue
-        else:
-            # remove '../' if exists that make the fragment working
-            # on github interface, in the 'readme' subfolder
-            relative_path = path.replace("../", "")
-            fragment_lines[index] = fragment_line.replace(
-                path, urljoin(module_url, relative_path)
-            )
+    #     if path.startswith("http"):
+    #         # It is already an absolute path
+    #         continue
+    #     else:
+    #         # remove '../' if exists that make the fragment working
+    #         # on github interface, in the 'readme' subfolder
+    #         relative_path = path.replace("../", "")
+    #         fragment_lines[index] = fragment_line.replace(
+    #             path, urljoin(module_url, relative_path)
+    #         )
     fragment = "".join(fragment_lines)
 
     # ensure that there is a new empty line at the end of the fragment
