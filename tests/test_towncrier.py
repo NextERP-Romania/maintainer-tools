@@ -6,6 +6,7 @@ import textwrap
 import pytest
 import toml
 from click.testing import CliRunner
+
 from tools.oca_towncrier import _make_issue_format, _prepare_config, oca_towncrier
 
 
@@ -97,7 +98,7 @@ def test_oca_towncrier_md(tmp_path):
         """\
             ## 14.0.1.0.1 (2021-12-31)
 
-            #### Bugfixes
+            ### Bugfixes
 
             - Bugfix description. ([#50](https://github.com/OCA/therepo/issues/50))
         """

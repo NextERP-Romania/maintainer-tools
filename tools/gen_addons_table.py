@@ -18,6 +18,7 @@ does not matter, will be replaced by the script
 """
 
 from __future__ import print_function
+
 import ast
 import io
 import logging
@@ -29,7 +30,6 @@ import click
 from .gitutils import commit_if_needed
 
 _logger = logging.getLogger(__name__)
-
 
 MARKERS = r"(\[//\]: # \(addons\))|(\[//\]: # \(end addons\))"
 MANIFESTS = ("__openerp__.py", "__manifest__.py")
@@ -54,9 +54,9 @@ def render_maintainers(manifest):
     maintainers = manifest.get("maintainers") or []
     return " ".join(
         [
-            "[![{maintainer}]"
-            "(https://github.com/{maintainer}.png?size=30px)]"
-            "(https://github.com/{maintainer})".format(maintainer=x)
+            "<a href='https://github.com/{0}'>"
+            "<img src='https://github.com/{0}.png' width='32' height='32' style='border-radius:50%;' alt='{0}'/>"
+            "</a>".format(x)
             for x in maintainers
         ]
     )

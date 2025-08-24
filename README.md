@@ -22,14 +22,19 @@ They are used by OCA maintainers to address common operations across all repos.
 
 **Prerequisite**
 
-Get a token from Github.
+Github authentication uses a token, that must be previously created on Github, at
+[Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens).
 
-    $ oca-github-login USERNAME
 
+Set and store the token to be used for Github auth using:
 
-NOTE: you may have to delete the existing one from
-"Account settings -> Developer Settings -> Personal Access Tokens".
+    $ oca-github-login
 
+Alternatively, the token can be set on the GITHUB_TOKEN environment variable.
+
+As a third alternative, if you have the [gh](https://cli.github.com/) client installed
+and have authenticated with `gh auth login`, maintainer tools will attempt to obtain the
+token from it using `gh auth token`.
 
 ### Sync team users from community.odoo.com to GitHub teams
 
@@ -102,7 +107,7 @@ You can leverage them to give more quality to your modules and to respect OCA gu
 
 To provide high quality README for our modules we generate them automatically.
 The sections of the final README are organized in fragments.
-They must be put inside a `readme` folder respecting [this structure|./readme].
+They must be put inside a `readme` folder respecting [this structure](./template/module/readme).
 
 eg.
 To generate the final README for the module `auth_keycloak`:
@@ -155,9 +160,9 @@ egg.
     $ tox -e py27  # python 2.7
     $ tox -- -k readme -v  # run tests containing 'readme' in their name, verbose
 
-**Get a token from Github**
+**Set the client token to use for Github* authentication*
 
-    $ python -m tools.github_login USERNAME
+    $ python -m tools.github_login
 
 **Run a script**
 

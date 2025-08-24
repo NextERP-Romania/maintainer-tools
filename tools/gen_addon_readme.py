@@ -13,13 +13,13 @@ from typing import Union
 from urllib.parse import urljoin
 
 import click
+import pypandoc
 from docutils.core import publish_file
 from jinja2 import Template
-import pypandoc
 
-from .gitutils import commit_if_needed
-from .manifest import get_manifest_path, read_manifest, find_addons, NoManifestFound
 from ._hash import hash
+from .gitutils import commit_if_needed
+from .manifest import NoManifestFound, find_addons, get_manifest_path, read_manifest
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -51,17 +51,17 @@ FRAGMENTS = {
 
 LICENSE_BADGES = {
     "AGPL-3": (
-        "https://img.shields.io/badge/licence-AGPL--3-blue.png",
+        "https://img.shields.io/badge/license-AGPL--3-blue.png",
         "http://www.gnu.org/licenses/agpl-3.0-standalone.html",
         "License: AGPL-3",
     ),
     "LGPL-3": (
-        "https://img.shields.io/badge/licence-LGPL--3-blue.png",
+        "https://img.shields.io/badge/license-LGPL--3-blue.png",
         "http://www.gnu.org/licenses/lgpl-3.0-standalone.html",
         "License: LGPL-3",
     ),
     "GPL-3": (
-        "https://img.shields.io/badge/licence-GPL--3-blue.png",
+        "https://img.shields.io/badge/license-GPL--3-blue.png",
         "http://www.gnu.org/licenses/gpl-3.0-standalone.html",
         "License: GPL-3",
     ),
@@ -136,7 +136,7 @@ PANDOC_MARKDOWN_FORMAT = "gfm-raw_html-gfm_auto_identifiers"
 
 @functools.lru_cache(maxsize=None)
 def ensure_pandoc_installed() -> None:
-    pypandoc.ensure_pandoc_installed()
+    pypandoc.ensure_pandoc_installed(delete_installer=True)
 
 
 def make_runboat_badge(repo, branch):
