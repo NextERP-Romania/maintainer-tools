@@ -20,6 +20,7 @@ dependencies = [
     "jinja2",
     "markdown-it-py",  # for oca-gen-addon-readme branded HTML index
     "cairosvg",  # for nexterp-gen-addon-icon SVG->PNG rasterization
+    "playwright",  # for nexterp-gen-screenshots (manual command, not a hook)
     "manifestoo-core>=1.1",
     "PyYAML",
     "polib",
@@ -76,6 +77,7 @@ oca-copier-update = "tools.copier_update:main"
 nexterp-gen-addon-index-html = "tools.nexterp_gen_addon_index_html:main"
 nexterp-gen-addon-changelog = "tools.nexterp_gen_addon_changelog:main"
 nexterp-gen-addon-icon = "tools.nexterp_gen_addon_icon:main"
+nexterp-gen-screenshots = "tools.nexterp_gen_screenshots:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]
