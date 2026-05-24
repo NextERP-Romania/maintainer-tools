@@ -21,6 +21,7 @@ dependencies = [
     "markdown-it-py",  # for oca-gen-addon-readme branded HTML index
     "cairosvg",  # for nexterp-gen-addon-icon SVG->PNG rasterization
     "playwright",  # for nexterp-gen-screenshots (manual command, not a hook)
+    "lxml",  # for nexterp-gen-screenshots --discover (Odoo view XML scan)
     "manifestoo-core>=1.1",
     "PyYAML",
     "polib",

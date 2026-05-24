@@ -48,17 +48,23 @@ import os
 import sys
 import time
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import click
 import yaml
 
 from .manifest import NoManifestFound, find_addons, read_manifest
+from .nexterp_discover_scenarios import discover_scenarios, merge_scenarios
 
 
 SCREENSHOTS_FILE = "screenshots.yaml"
 DEFAULT_TIMEOUT_MS = 15000
 DEFAULT_VIEWPORT = {"width": 1440, "height": 900}
+# Marker comment we drop into auto-generated PNGs (in the tEXt chunk)
+# so subsequent runs know the file was last touched by us, not a human.
+# A PNG without this marker is treated as a manual override and never
+# overwritten by the tool.
+PNG_GENERATOR_MARKER = b"nexterp-gen-screenshots"
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +76,74 @@ def _load_spec(path: str) -> Optional[Dict[str, Any]]:
         return None
     with open(path, "r", encoding="utf8") as fh:
         return yaml.safe_load(fh) or {}
+
+
+def _dump_spec(path: str, spec: Dict[str, Any]) -> None:
+    """Write ``spec`` to ``path`` with stable, human-friendly formatting."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf8") as fh:
+        yaml.safe_dump(
+            spec,
+            fh,
+            sort_keys=False,
+            default_flow_style=False,
+            allow_unicode=True,
+            width=120,
+        )
+
+
+def _png_is_manual(path: str) -> bool:
+    """True if a PNG at ``path`` exists and lacks our generator marker.
+
+    PNGs we wrote contain the ``nexterp-gen-screenshots`` byte sequence
+    in a tEXt chunk (added below in ``_stamp_png``). Anything without
+    that marker is treated as a hand-crafted override and preserved
+    across runs — overwriting it would lose work the developer
+    intentionally put in place.
+    """
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path, "rb") as fh:
+            return PNG_GENERATOR_MARKER not in fh.read()
+    except OSError:
+        return False
+
+
+def _stamp_png(path: str) -> None:
+    """Append a tEXt chunk to a PNG so we can later identify it as ours.
+
+    The PNG spec lets us insert ancillary chunks anywhere between IHDR
+    and IEND. We append a tEXt chunk just before IEND with the keyword
+    ``Generator`` and our marker. If anything goes wrong (file vanished,
+    not a real PNG) we silently leave the file alone — the worst-case
+    outcome is the next run treats it as manual and skips it, which is
+    safer than the opposite.
+    """
+    try:
+        with open(path, "rb") as fh:
+            data = fh.read()
+        if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            return
+        iend_pos = data.rfind(b"IEND")
+        if iend_pos < 4:  # need room for the 4-byte length prefix
+            return
+        # iend chunk = 4-byte length + "IEND" + 4-byte CRC. Insert before length.
+        insert_at = iend_pos - 4
+        keyword = b"Generator"
+        text = PNG_GENERATOR_MARKER
+        chunk_data = keyword + b"\x00" + text
+        import struct
+        import zlib
+        length = struct.pack(">I", len(chunk_data))
+        chunk_type = b"tEXt"
+        crc = struct.pack(">I", zlib.crc32(chunk_type + chunk_data) & 0xFFFFFFFF)
+        chunk = length + chunk_type + chunk_data + crc
+        new_data = data[:insert_at] + chunk + data[insert_at:]
+        with open(path, "wb") as fh:
+            fh.write(new_data)
+    except OSError:
+        return
 
 
 def _normalize_step(step: Any) -> Dict[str, Any]:
@@ -193,11 +267,16 @@ def _run_step(session: OdooSession, step: Dict[str, Any],
             raise ValueError("screenshot step needs filename or shorthand value")
         out = os.path.join(output_dir, filename)
         os.makedirs(os.path.dirname(out), exist_ok=True)
+        # Honor manual overrides: a PNG without our generator marker
+        # was put there by hand; never overwrite it.
+        if _png_is_manual(out):
+            return  # silently skip; explicit log is at the run summary
         selector = step.get("selector")
         if selector:
             page.locator(selector).screenshot(path=out, timeout=timeout)
         else:
             page.screenshot(path=out, full_page=step.get("full_page", False))
+        _stamp_png(out)
     elif action == "sleep":
         # explicit sleep (ms) — rarely needed once selectors are right
         time.sleep(int(step["value"]) / 1000.0)
@@ -258,15 +337,33 @@ def run_addon_scenarios(session: OdooSession, addon_name: str, addon_dir: str,
 )
 @click.option("--odoo-url", default="http://localhost:8069",
               help="Base URL of the running Odoo instance.")
-@click.option("--db", required=True, help="Database name to log into.")
+@click.option("--db", default="",
+              help="Database name to log into. Required unless --discover-only is set.")
 @click.option("--user", default="admin", help="Login user.")
 @click.option("--password", default="admin", help="Login password.")
 @click.option("--headless/--headed", default=True,
               help="Run Chromium headless. Use --headed when debugging selectors.")
 @click.option("--viewport-width", type=int, default=DEFAULT_VIEWPORT["width"])
 @click.option("--viewport-height", type=int, default=DEFAULT_VIEWPORT["height"])
+@click.option(
+    "--discover/--no-discover",
+    default=False,
+    help=(
+        "Before running, walk each addon's views/wizards/static/src and "
+        "auto-populate readme/screenshots.yaml with draft scenarios for "
+        "every act_window, wizard and OWL component found. Scenarios "
+        "whose name already exists in the file are preserved untouched."
+    ),
+)
+@click.option(
+    "--discover-only",
+    is_flag=True,
+    default=False,
+    help="Run discovery and write the YAML files, then exit — no browser.",
+)
 def main(addon_dirs, addons_dir, odoo_url, db, user, password,
-         headless, viewport_width, viewport_height):
+         headless, viewport_width, viewport_height,
+         discover, discover_only):
     """Capture screenshots for each addon's readme/screenshots.yaml.
 
     The tool expects Odoo to already be running, the modules to be
@@ -296,6 +393,31 @@ def main(addon_dirs, addons_dir, odoo_url, db, user, password,
             continue
         _add(addon_name, addon_dir, manifest)
 
+    # --discover / --discover-only: walk each addon's source and merge
+    # auto-emitted scenarios into its YAML before the run. Manual
+    # scenarios (same `name` already in file) are preserved as-is.
+    if discover or discover_only:
+        for addon_name, addon_dir, _manifest in addons:
+            spec_path = os.path.join(addon_dir, "readme", SCREENSHOTS_FILE)
+            existing = _load_spec(spec_path)
+            drafts = discover_scenarios(addon_name, addon_dir)
+            new_spec, added = merge_scenarios(existing, drafts)
+            if added or existing is None:
+                _dump_spec(spec_path, new_spec)
+                marker = "+" if existing is None else "~"
+                click.echo(
+                    f"{marker} {addon_name}: wrote {len(added)} new scenario(s) "
+                    f"to readme/{SCREENSHOTS_FILE}"
+                )
+        if discover_only:
+            return
+
+    if not db:
+        click.echo(
+            "--db is required when not using --discover-only.", err=True
+        )
+        sys.exit(2)
+
     # Pre-filter to addons that actually declare scenarios; saves a
     # browser launch when nothing is to be done.
     to_process = []
@@ -303,7 +425,15 @@ def main(addon_dirs, addons_dir, odoo_url, db, user, password,
         spec_path = os.path.join(addon_dir, "readme", SCREENSHOTS_FILE)
         spec = _load_spec(spec_path)
         if spec and spec.get("scenarios"):
-            to_process.append((addon_name, addon_dir, spec))
+            # Drop scenarios with empty steps (e.g. OWL placeholders the
+            # developer hasn't filled in yet) so they don't show as
+            # spurious "ok" results.
+            spec = dict(spec)
+            spec["scenarios"] = [
+                s for s in spec["scenarios"] if (s.get("steps") or [])
+            ]
+            if spec["scenarios"]:
+                to_process.append((addon_name, addon_dir, spec))
 
     if not to_process:
         click.echo("No readme/screenshots.yaml files with scenarios — nothing to do.")
