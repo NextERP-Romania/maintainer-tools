@@ -267,9 +267,11 @@ def _run_step(session: OdooSession, step: Dict[str, Any],
             raise ValueError("screenshot step needs filename or shorthand value")
         out = os.path.join(output_dir, filename)
         os.makedirs(os.path.dirname(out), exist_ok=True)
-        # Honor manual overrides: a PNG without our generator marker
-        # was put there by hand; never overwrite it.
-        if _png_is_manual(out):
+        # Honor manual overrides unless the caller asked for a full
+        # refresh. ``overwrite_manual`` is threaded in via the run-time
+        # context dict so we don't have to widen every step signature.
+        overwrite = step.get("_overwrite_manual", False)
+        if not overwrite and _png_is_manual(out):
             return  # silently skip; explicit log is at the run summary
         selector = step.get("selector")
         if selector:
@@ -292,11 +294,14 @@ def _run_step(session: OdooSession, step: Dict[str, Any],
 # ---------------------------------------------------------------------------
 
 def run_addon_scenarios(session: OdooSession, addon_name: str, addon_dir: str,
-                        spec: Dict[str, Any]) -> Dict[str, str]:
+                        spec: Dict[str, Any],
+                        overwrite_manual: bool = False) -> Dict[str, str]:
     """Execute every scenario declared in the addon's spec.
 
     Returns a ``{scenario_name: 'ok' | error_msg}`` mapping suitable for
-    a CLI summary at the end of the run.
+    a CLI summary at the end of the run. ``overwrite_manual=True``
+    threads through to the screenshot step so hand-crafted PNGs are
+    replaced too (full-refresh mode).
     """
     setup = spec.get("setup") or {}
     pause_ms = int(setup.get("pause_ms_default", 400))
@@ -306,6 +311,10 @@ def run_addon_scenarios(session: OdooSession, addon_name: str, addon_dir: str,
     for sc in spec.get("scenarios") or []:
         name = sc.get("name", "<unnamed>")
         steps = [_normalize_step(s) for s in (sc.get("steps") or [])]
+        if overwrite_manual:
+            for s in steps:
+                if s.get("action") == "screenshot":
+                    s["_overwrite_manual"] = True
         try:
             for step in steps:
                 _run_step(session, step, output_dir, pause_ms)
@@ -361,9 +370,20 @@ def run_addon_scenarios(session: OdooSession, addon_name: str, addon_dir: str,
     default=False,
     help="Run discovery and write the YAML files, then exit — no browser.",
 )
+@click.option(
+    "--overwrite-manual",
+    is_flag=True,
+    default=False,
+    help=(
+        "Ignore the per-PNG 'manual override' marker and overwrite "
+        "every screenshot. Use this for a full refresh after an Odoo "
+        "UI upgrade or when starting from a clean demo database. By "
+        "default the tool preserves hand-edited PNGs."
+    ),
+)
 def main(addon_dirs, addons_dir, odoo_url, db, user, password,
          headless, viewport_width, viewport_height,
-         discover, discover_only):
+         discover, discover_only, overwrite_manual):
     """Capture screenshots for each addon's readme/screenshots.yaml.
 
     The tool expects Odoo to already be running, the modules to be
@@ -445,7 +465,10 @@ def main(addon_dirs, addons_dir, odoo_url, db, user, password,
     with OdooSession(odoo_url, db, user, password, headless, viewport) as session:
         for addon_name, addon_dir, spec in to_process:
             click.echo(f"\n▶ {addon_name}")
-            results = run_addon_scenarios(session, addon_name, addon_dir, spec)
+            results = run_addon_scenarios(
+                session, addon_name, addon_dir, spec,
+                overwrite_manual=overwrite_manual,
+            )
             for name, status in results.items():
                 marker = "✓" if status == "ok" else "✗"
                 click.echo(f"  {marker} {name}: {status}")
