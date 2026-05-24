@@ -72,20 +72,29 @@ def _make_md_renderer() -> MarkdownIt:
 
 
 def _rewrite_image_paths(md_text: str) -> str:
-    """Strip ``./`` / ``../`` prefixes from relative image references.
+    """Rewrite relative image references so they resolve from index.html.
 
-    Screenshots live in ``static/description/`` next to the generated
-    ``index.html``, so a fragment like ``![alt](./screenshot.png)`` (which
-    resolves from ``readme/`` on GitHub) needs the prefix dropped here.
-    Absolute URLs (http/https/data) and root-relative paths are left
-    alone.
+    The branded ``index.html`` lives in ``<addon>/static/description/``,
+    but the OCA RST flow renders ``readme/*.md`` from the ``readme/``
+    directory — which is why fragments use either ``./screenshot.png``
+    (relative to readme/, with screenshots dropped *next to the .md*) or
+    ``../static/description/screenshot.png`` (relative to readme/,
+    pointing into the description folder). Both styles must collapse to
+    just the bare filename here, since the index.html sits beside the
+    PNGs.
+
+    Absolute URLs (http/https/data:) and root-relative paths are left
+    alone — they don't need rewriting.
     """
 
     def _repl(match: "re.Match[str]") -> str:
         alt, path = match.group(1), match.group(2)
         if re.match(r"^(?:https?:|data:|/)", path):
             return match.group(0)
+        # Drop leading ./ and ../ levels.
         cleaned = re.sub(r"^(?:\.{1,2}/)+", "", path)
+        # Drop a leading static/description/ since we're already there.
+        cleaned = re.sub(r"^static/description/", "", cleaned)
         return f"![{alt}]({cleaned})"
 
     return re.sub(r"!\[([^\]]*)\]\(([^)\s]+)\)", _repl, md_text)
