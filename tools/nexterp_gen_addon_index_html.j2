@@ -92,37 +92,38 @@
 .nx-badge--mature { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
 .nx-badge--beta { background: #fef3c7; color: #92400e; border-color: #fde68a; }
 
-/* ----- Tabs (CSS only, radio + sibling selector) ----- */
+/* ----- Sections (apps.odoo.com strips <input>, so we use anchor nav
+ * instead of CSS-only tabs — same visual rhythm, robust everywhere) ----- */
 .nx-tabs { margin: 24px 0; }
-.nx-tabs input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
 .nx-tabs__nav {
   display: flex; flex-wrap: wrap; gap: 4px;
   border-bottom: 2px solid var(--nx-border);
   margin-bottom: 24px;
-  position: sticky; top: 0; background: #fff; z-index: 5;
   padding-top: 8px;
 }
-.nx-tabs__nav label {
-  cursor: pointer;
+.nx-tabs__nav a {
   padding: 10px 20px;
   font-weight: 600;
   color: var(--nx-muted);
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
   transition: color .15s, border-color .15s;
-  user-select: none;
+  text-decoration: none !important;
 }
-.nx-tabs__nav label:hover { color: var(--nx-ink); }
-.nx-tabs__panel { display: none; animation: nx-fade .25s ease-out; }
-@keyframes nx-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-
-{% for tid in tab_ids %}
-#nx-tab-{{ tid }}:checked ~ .nx-tabs__nav label[for="nx-tab-{{ tid }}"] {
-  color: var(--nx-primary);
-  border-bottom-color: var(--nx-primary);
+.nx-tabs__nav a:hover { color: var(--nx-primary); border-bottom-color: var(--nx-primary); text-decoration: none !important; }
+.nx-tabs__panel {
+  scroll-margin-top: 80px;
+  padding-top: 4px;
+  margin-bottom: 36px;
 }
-#nx-tab-{{ tid }}:checked ~ .nx-tabs__panels #nx-panel-{{ tid }} { display: block; }
-{% endfor %}
+.nx-tabs__panel + .nx-tabs__panel { border-top: 1px solid var(--nx-border); padding-top: 36px; }
+.nx-tabs__panel-title {
+  font-size: 1.4rem; font-weight: 700; color: var(--nx-ink);
+  margin: 0 0 16px;
+  padding: 4px 12px;
+  border-left: 4px solid var(--nx-primary);
+  background: var(--nx-soft);
+}
 
 /* ----- Suite section ----- */
 .nx-suite {
@@ -341,7 +342,7 @@
   .nx-hero__title { font-size: 1.4rem; }
   .nx-foot { grid-template-columns: 1fr; }
   .nx-tabs__nav { overflow-x: auto; flex-wrap: nowrap; }
-  .nx-tabs__nav label { white-space: nowrap; padding: 8px 14px; font-size: .9rem; }
+  .nx-tabs__nav a { white-space: nowrap; padding: 8px 14px; font-size: .9rem; }
 }
 </style>
 </head>
@@ -370,25 +371,21 @@
     </div>
   </section>
 
-  {# ===== Tabs ===== #}
+  {# ===== Sections (apps.odoo.com strips <input>, so we render anchor
+       nav + stacked sections instead of CSS-only tabs). ===== #}
   <section class="nx-tabs">
-    {# Radios first, so :checked ~ siblings can target nav labels and panels. #}
-    {% for tid in tab_ids %}
-    <input type="radio" id="nx-tab-{{ tid }}" name="nx-tab"{% if loop.first %} checked{% endif %} />
-    {% endfor %}
-
-    <nav class="nx-tabs__nav" role="tablist">
+    {% set label_map = {'overview': 'Overview', 'features': 'Features', 'configure': 'Configuration', 'usage': 'How it works', 'screenshots': 'Screenshots', 'versions': 'Versions'} %}
+    <nav class="nx-tabs__nav">
       {% for tid in tab_ids %}
-      {% set label_map = {'overview': 'Overview', 'features': 'Features', 'configure': 'Configuration', 'usage': 'How it works', 'screenshots': 'Screenshots', 'versions': 'Versions'} %}
-      <label for="nx-tab-{{ tid }}">{{ label_map[tid] }}</label>
+      <a href="#nx-panel-{{ tid }}">{{ label_map[tid] }}</a>
       {% endfor %}
     </nav>
 
     <div class="nx-tabs__panels">
       {% if 'overview' in tab_ids %}
       <article id="nx-panel-overview" class="nx-tabs__panel">
+        <h2 class="nx-tabs__panel-title">Overview</h2>
         <div class="nx-overview__module">
-          <p class="nx-section-eyebrow">About this module</p>
           {% if fragments.DESCRIPTION %}
           {{ fragments.DESCRIPTION.body }}
           {% elif fragments.CONTEXT %}
@@ -417,8 +414,8 @@
 
       {% if 'features' in tab_ids %}
       <article id="nx-panel-features" class="nx-tabs__panel">
+        <h2 class="nx-tabs__panel-title">Features</h2>
         {% if fragments.CONTEXT %}
-        {% if fragments.CONTEXT.title %}<h2>{{ fragments.CONTEXT.title }}</h2>{% endif %}
         {{ fragments.CONTEXT.body }}
         {% endif %}
       </article>
@@ -426,7 +423,7 @@
 
       {% if 'configure' in tab_ids %}
       <article id="nx-panel-configure" class="nx-tabs__panel">
-        {% if fragments.CONFIGURE.title %}<h2>{{ fragments.CONFIGURE.title }}</h2>{% endif %}
+        <h2 class="nx-tabs__panel-title">Configuration</h2>
         {{ fragments.CONFIGURE.body }}
         {% if fragments.INSTALL %}
         <hr style="margin: 24px 0; border: 0; border-top: 1px solid var(--nx-border);" />
@@ -438,14 +435,15 @@
 
       {% if 'usage' in tab_ids %}
       <article id="nx-panel-usage" class="nx-tabs__panel">
-        {% if fragments.USAGE.title %}<h2>{{ fragments.USAGE.title }}</h2>{% endif %}
+        <h2 class="nx-tabs__panel-title">How it works</h2>
         {{ fragments.USAGE.body }}
       </article>
       {% endif %}
 
       {% if 'screenshots' in tab_ids %}
       <article id="nx-panel-screenshots" class="nx-tabs__panel nx-gallery">
-        <p class="nx-versions__sub">Auto-captured from a running Odoo instance. Refine the corresponding scenarios in <code>readme/screenshots.yaml</code> to control framing.</p>
+        <h2 class="nx-tabs__panel-title">Screenshots</h2>
+        <p class="nx-versions__sub">Auto-captured from a running Odoo instance.</p>
         <div class="nx-gallery__grid">
           {% for shot in gallery %}
           <figure class="nx-gallery__item">
@@ -461,6 +459,7 @@
 
       {% if 'versions' in tab_ids %}
       <article id="nx-panel-versions" class="nx-tabs__panel nx-versions">
+        <h2 class="nx-tabs__panel-title">Versions</h2>
         {{ fragments.HISTORY.body }}
       </article>
       {% endif %}
@@ -474,9 +473,15 @@
     <p class="nx-suite__sub">Other modules from the same publisher, built to work together.</p>
     <div class="nx-suite__grid">
       {% for s in siblings %}
+      {# Sibling icons are always rendered via the placeholder. Relative
+         paths to other-module PNGs (../../<m>/static/description/icon.png)
+         don't resolve once apps.odoo.com serves the page from its CDN,
+         and adding an absolute URL would mean hard-coding the loempia
+         module IDs that the publisher doesn't know. Initials in a
+         gradient tile work everywhere. #}
       <a class="nx-suite__card" href="{{ s.apps_url }}" target="_blank" rel="noopener">
         <div class="nx-suite__card-head">
-          {% if s.icon %}
+          {% if False %}
           <img class="nx-suite__card-icon" src="{{ s.icon }}" alt="{{ s.title }} icon" />
           {% else %}
           <div class="nx-suite__card-icon nx-suite__card-icon--placeholder">{{ s.title[:2]|upper }}</div>
