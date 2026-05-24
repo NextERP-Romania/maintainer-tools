@@ -35,6 +35,11 @@ from .manifest import NoManifestFound, find_addons, read_manifest
 
 OUR_MARKER = "nexterp-gen-addon-index-html"
 OCA_MARKER = "oca-gen-addon-readme"
+# Docutils stamps every page it generates with this string in the
+# <meta name="generator" content="Docutils …"> tag, so we use it to
+# recognize old auto-generated index.html files that predate any
+# explicit marker — and are therefore safe to overwrite.
+DOCUTILS_MARKER = "Docutils"
 
 DEFAULT_TEMPLATE = os.path.join(
     os.path.dirname(__file__), "nexterp_gen_addon_index_html.j2"
@@ -42,6 +47,8 @@ DEFAULT_TEMPLATE = os.path.join(
 DEFAULT_PRESENTATION_MD = os.path.join(
     os.path.dirname(__file__), "nexterp_presentation.md"
 )
+DEFAULT_LOGO = os.path.join(os.path.dirname(__file__), "nexterp_logo.png")
+LOGO_BASENAME = "nexterp_logo.png"
 
 # Fragments consumed by the branded template, in display order. The set
 # is intentionally narrower than gen_addon_readme.FRAGMENTS — we only
@@ -239,6 +246,23 @@ def _render_md_to_html(md_text: str) -> str:
     return _make_md_renderer().render(_rewrite_image_paths(md_text))
 
 
+def _ensure_logo(addon_dir: str, source_logo: Optional[str]) -> Optional[str]:
+    """Copy the shared NextERP logo into the addon's static/description/
+    if it isn't there yet, so the rendered ``index.html`` can reference
+    it as a sibling file. Returns the relative basename to use in HTML,
+    or ``None`` if no logo is available.
+    """
+    if not source_logo or not os.path.exists(source_logo):
+        return None
+    target_dir = os.path.join(addon_dir, "static", "description")
+    target = os.path.join(target_dir, LOGO_BASENAME)
+    if not os.path.exists(target):
+        os.makedirs(target_dir, exist_ok=True)
+        with open(source_logo, "rb") as src, open(target, "wb") as dst:
+            dst.write(src.read())
+    return LOGO_BASENAME
+
+
 def gen_one_addon_index_html(
     addon_name: str,
     addon_dir: str,
@@ -249,6 +273,7 @@ def gen_one_addon_index_html(
     html_template_filename: str,
     siblings: List[Dict[str, str]],
     nexterp_presentation_html: str = "",
+    logo_source: Optional[str] = None,
 ) -> Optional[str]:
     """Render the branded ``index.html`` for one addon.
 
@@ -261,7 +286,12 @@ def gen_one_addon_index_html(
     if os.path.exists(index_filename):
         with open(index_filename, "r", encoding="utf8") as fh:
             existing = fh.read()
-        if OUR_MARKER not in existing and OCA_MARKER not in existing:
+        is_generated = (
+            OUR_MARKER in existing
+            or OCA_MARKER in existing
+            or DOCUTILS_MARKER in existing
+        )
+        if not is_generated:
             return None
 
     os.makedirs(index_dir, exist_ok=True)
@@ -274,6 +304,8 @@ def gen_one_addon_index_html(
             tf.read(), trim_blocks=True, lstrip_blocks=True, autoescape=False
         )
 
+    logo_rel = _ensure_logo(addon_dir, logo_source)
+
     html = template.render(
         marker=OUR_MARKER,
         addon_name=addon_name,
@@ -285,6 +317,7 @@ def gen_one_addon_index_html(
         org_name=org_name,
         repo_name=repo_name,
         icon=_find_icon_relpath(addon_dir),
+        nexterp_logo=logo_rel,
         nexterp_presentation=nexterp_presentation_html,
         apps_url=f"https://apps.odoo.com/apps/modules/{branch}/{addon_name}",
     )
@@ -346,6 +379,16 @@ def gen_one_addon_index_html(
         "so the cards closest to the current addon win the top slots."
     ),
 )
+@click.option(
+    "--nexterp-logo",
+    default=DEFAULT_LOGO,
+    help=(
+        "Path to the NextERP logo PNG. The file is copied to each "
+        "addon's static/description/ folder (if missing) and referenced "
+        "from the brand banner in the Overview tab. Pass an empty "
+        "string to skip."
+    ),
+)
 def main(
     org_name,
     repo_name,
@@ -355,6 +398,7 @@ def main(
     template_filename,
     nexterp_presentation_md,
     max_siblings,
+    nexterp_logo,
 ):
     """Generate NextERP-branded static/description/index.html files.
 
@@ -415,6 +459,7 @@ def main(
             template_filename,
             siblings,
             nexterp_presentation_html=presentation_html,
+            logo_source=nexterp_logo or None,
         )
 
 

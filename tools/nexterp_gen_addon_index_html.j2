@@ -224,16 +224,28 @@
 /* ----- Brand presentation (Overview tab, lower half) ----- */
 .nx-brand-lead {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 18px;
+  grid-template-columns: 160px 1fr;
+  gap: 24px;
+  align-items: center;
   padding: 28px;
   margin: 0 0 24px;
   background: linear-gradient(135deg, var(--nx-ink) 0%, #1e293b 100%);
   color: #fff;
   border-radius: var(--nx-radius);
 }
-.nx-brand-lead h2 { color: #fff; margin: 0; font-size: 1.5rem; }
-.nx-brand-lead p { color: #cbd5e1; margin: 0; }
+.nx-brand-lead__logo {
+  background: #fff;
+  border-radius: var(--nx-radius-sm);
+  padding: 14px 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.nx-brand-lead__logo img { display: block; width: 100%; height: auto; max-width: 140px; }
+.nx-brand-lead__body h2 { color: #fff; margin: 0; font-size: 1.5rem; }
+.nx-brand-lead__body p { color: #cbd5e1; margin: 8px 0 0; }
+@media (max-width: 720px) {
+  .nx-brand-lead { grid-template-columns: 1fr; text-align: center; }
+  .nx-brand-lead__logo { max-width: 200px; margin: 0 auto; }
+}
 .nx-brand-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -328,16 +340,6 @@
         <span class="nx-badge nx-badge--brand">v {{ manifest.version or branch }}</span>
         {% if manifest.category %}<span class="nx-badge">{{ manifest.category }}</span>{% endif %}
         {% if manifest.license %}<span class="nx-badge">{{ manifest.license }}</span>{% endif %}
-        {% set dev = (manifest.development_status or 'Beta')|lower %}
-        {% if dev == 'mature' %}
-        <span class="nx-badge nx-badge--mature">● Mature</span>
-        {% elif dev in ('production/stable', 'production') %}
-        <span class="nx-badge nx-badge--success">● Stable</span>
-        {% elif dev == 'beta' %}
-        <span class="nx-badge nx-badge--beta">● Beta</span>
-        {% else %}
-        <span class="nx-badge">● {{ manifest.development_status }}</span>
-        {% endif %}
       </div>
     </div>
   </section>
@@ -370,6 +372,17 @@
         {% if nexterp_presentation %}
         <hr class="nx-divider" />
         <div class="nx-overview__brand">
+          <section class="nx-brand-lead">
+            {% if nexterp_logo %}
+            <div class="nx-brand-lead__logo">
+              <img src="{{ nexterp_logo }}" alt="NextERP Romania" />
+            </div>
+            {% endif %}
+            <div class="nx-brand-lead__body">
+              <h2>Built &amp; supported by NextERP Romania</h2>
+              <p>Romanian Odoo specialists, here for the long run — from implementation to localization and day-to-day production support.</p>
+            </div>
+          </section>
           {{ nexterp_presentation }}
         </div>
         {% endif %}

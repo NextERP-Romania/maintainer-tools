@@ -1,8 +1,3 @@
-<section class="nx-brand-lead">
-  <h2>Built &amp; supported by NextERP Romania</h2>
-  <p>Romanian Odoo specialists, here for the long run — from implementation to localization and day-to-day production support.</p>
-</section>
-
 <div class="nx-brand-stats">
   <div class="nx-brand-stat">
     <div class="nx-brand-stat__num">10+</div>
