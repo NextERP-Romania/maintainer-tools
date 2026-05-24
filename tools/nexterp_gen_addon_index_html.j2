@@ -187,6 +187,32 @@
 }
 .nx-feature-grid > * { background: var(--nx-soft); padding: 16px; border-radius: var(--nx-radius-sm); border: 1px solid var(--nx-border); }
 
+/* ----- Screenshots gallery tab ----- */
+.nx-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.nx-gallery__item {
+  margin: 0;
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius-sm);
+  overflow: hidden;
+  background: var(--nx-soft);
+  transition: transform .15s, box-shadow .15s;
+}
+.nx-gallery__item:hover { transform: translateY(-2px); box-shadow: var(--nx-shadow); }
+.nx-gallery__item a { display: block; line-height: 0; }
+.nx-gallery__item img { width: 100%; height: auto; display: block; border-radius: 0; }
+.nx-gallery__item figcaption {
+  padding: 10px 14px;
+  font-size: .9rem;
+  color: var(--nx-ink);
+  background: #fff;
+  border-top: 1px solid var(--nx-border);
+}
+
 /* ----- Versions tab (HISTORY.md rendered) ----- */
 .nx-versions h2 {
   margin: 0 0 .6em;
@@ -353,7 +379,7 @@
 
     <nav class="nx-tabs__nav" role="tablist">
       {% for tid in tab_ids %}
-      {% set label_map = {'overview': 'Overview', 'features': 'Features', 'configure': 'Configuration', 'usage': 'How it works', 'versions': 'Versions'} %}
+      {% set label_map = {'overview': 'Overview', 'features': 'Features', 'configure': 'Configuration', 'usage': 'How it works', 'screenshots': 'Screenshots', 'versions': 'Versions'} %}
       <label for="nx-tab-{{ tid }}">{{ label_map[tid] }}</label>
       {% endfor %}
     </nav>
@@ -414,6 +440,22 @@
       <article id="nx-panel-usage" class="nx-tabs__panel">
         {% if fragments.USAGE.title %}<h2>{{ fragments.USAGE.title }}</h2>{% endif %}
         {{ fragments.USAGE.body }}
+      </article>
+      {% endif %}
+
+      {% if 'screenshots' in tab_ids %}
+      <article id="nx-panel-screenshots" class="nx-tabs__panel nx-gallery">
+        <p class="nx-versions__sub">Auto-captured from a running Odoo instance. Refine the corresponding scenarios in <code>readme/screenshots.yaml</code> to control framing.</p>
+        <div class="nx-gallery__grid">
+          {% for shot in gallery %}
+          <figure class="nx-gallery__item">
+            <a href="{{ shot.filename }}" target="_blank" rel="noopener">
+              <img src="{{ shot.filename }}" alt="{{ shot.caption }}" loading="lazy" />
+            </a>
+            <figcaption>{{ shot.caption }}</figcaption>
+          </figure>
+          {% endfor %}
+        </div>
       </article>
       {% endif %}
 

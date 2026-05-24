@@ -135,6 +135,41 @@ def _find_icon_relpath(addon_dir: str) -> Optional[str]:
     return None
 
 
+# Filenames that live in static/description/ but are not user-facing
+# screenshots: addon icon, banner icon and the shared NextERP logo.
+_GALLERY_SKIP = {"icon.png", "apps_icon.png", "nexterp_logo.png"}
+
+
+def _gallery_pngs(addon_dir: str, fragments_html: str) -> List[Dict[str, str]]:
+    """Return PNGs in ``static/description/`` not already shown in fragments.
+
+    The "Screenshots" tab surfaces auto-generated captures that the
+    developer hasn't explicitly placed in CONFIGURE/USAGE yet. We skip
+    branding assets (icon, apps_icon, nexterp_logo) and any PNG whose
+    filename already appears in the rendered fragment HTML.
+    """
+    desc_dir = os.path.join(addon_dir, "static", "description")
+    if not os.path.isdir(desc_dir):
+        return []
+    out = []
+    for fname in sorted(os.listdir(desc_dir)):
+        if not fname.lower().endswith(".png"):
+            continue
+        if fname in _GALLERY_SKIP:
+            continue
+        if f'"{fname}"' in fragments_html or f">{fname}<" in fragments_html:
+            continue
+        # Human-readable caption: strip extension + replace separators.
+        caption = re.sub(r"\.png$", "", fname, flags=re.IGNORECASE)
+        caption = caption.replace("_", " ").replace("-", " ").strip()
+        # Drop a leading "action " or "wizard " prefix from auto-named
+        # captures since those words are already conveyed by the tab.
+        caption = re.sub(r"^(action|wizard)\s+", "", caption, flags=re.IGNORECASE)
+        caption = caption[:1].upper() + caption[1:] if caption else fname
+        out.append({"filename": fname, "caption": caption})
+    return out
+
+
 def _find_sibling_icon_basename(sibling_dir: str) -> Optional[str]:
     for candidate in ("icon.png", "apps_icon.png"):
         if os.path.exists(os.path.join(sibling_dir, "static", "description", candidate)):
@@ -250,6 +285,15 @@ def _decide_tabs(fragments: Dict[str, Dict[str, str]]) -> List[str]:
     return tabs
 
 
+def _maybe_add_screenshots_tab(tab_ids: List[str], gallery: List[Dict[str, str]]) -> None:
+    """Insert the 'screenshots' tab in front of 'versions' when there's
+    content to show. Mutates the list in place."""
+    if not gallery:
+        return
+    insert_at = tab_ids.index("versions") if "versions" in tab_ids else len(tab_ids)
+    tab_ids.insert(insert_at, "screenshots")
+
+
 def _render_md_to_html(md_text: str) -> str:
     """Render a free-standing markdown blob (e.g. the shared NextERP intro)."""
     return _make_md_renderer().render(_rewrite_image_paths(md_text))
@@ -306,7 +350,14 @@ def gen_one_addon_index_html(
     os.makedirs(index_dir, exist_ok=True)
 
     fragments = _render_fragments(addon_dir)
+    # Concatenate all rendered fragment bodies; the gallery filter uses
+    # this to skip PNGs already shown inline.
+    fragments_html_blob = "".join(
+        (f.get("body") or "") for f in fragments.values()
+    )
+    gallery = _gallery_pngs(addon_dir, fragments_html_blob)
     tab_ids = _decide_tabs(fragments)
+    _maybe_add_screenshots_tab(tab_ids, gallery)
 
     with open(html_template_filename, "r", encoding="utf8") as tf:
         template = Template(
@@ -321,6 +372,7 @@ def gen_one_addon_index_html(
         manifest=manifest,
         fragments=fragments,
         tab_ids=tab_ids,
+        gallery=gallery,
         siblings=siblings,
         branch=branch,
         org_name=org_name,
