@@ -46,3 +46,17 @@
   language: python
   pass_filenames: false
   files: (__manifest__\.py|__openerp__\.py|__terp__\.py|setup\.py|pyproject\.toml)$
+
+- id: nexterp-gen-addon-changelog
+  name: Refresh readme/HISTORY.md on manifest version bump
+  entry: nexterp-gen-addon-changelog
+  language: python
+  pass_filenames: false
+  files: (__manifest__\.py|__openerp__\.py|__terp__\.py)$
+
+- id: nexterp-gen-addon-index-html
+  name: Generate NextERP-branded static/description/index.html
+  always_run: true
+  entry: nexterp-gen-addon-index-html
+  language: python
+  pass_filenames: false
