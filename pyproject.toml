@@ -10,6 +10,7 @@ license = "AGPL-3.0-only"
 authors = [{name = "Odoo Community Association (OCA)"}]
 dynamic = ["version"]
 dependencies = [
+    "anthropic>=0.40",  # for nexterp-gen-addon-readme-content
     "appdirs",
     "click",
     "docutils",
@@ -78,6 +79,7 @@ oca-copier-update = "tools.copier_update:main"
 nexterp-gen-addon-index-html = "tools.nexterp_gen_addon_index_html:main"
 nexterp-gen-addon-changelog = "tools.nexterp_gen_addon_changelog:main"
 nexterp-gen-addon-icon = "tools.nexterp_gen_addon_icon:main"
+nexterp-gen-addon-readme-content = "tools.nexterp_gen_addon_readme_content:main"
 nexterp-gen-screenshots = "tools.nexterp_gen_screenshots:main"
 
 [tool.hatch.build.targets.wheel]
