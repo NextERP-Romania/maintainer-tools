@@ -262,11 +262,78 @@ def gen_one_addon_icon(
             title_font_size=64 if not line2 else 56,
             width=1058,
             height=595,
+            logo_data_uri=_load_logo_data_uri(),
         )
         if _render_svg_to_png(svg, apps_icon_png, 1058, 595):
             written["apps_icon.png"] = apps_icon_png
 
+    # Ensure the manifest declares apps_icon.png as cover image via the
+    # ``images`` key — without that, apps.odoo.com flags the module as
+    # "no cover image (thumbnail)" even though the file is there.
+    if os.path.exists(apps_icon_png):
+        if _ensure_manifest_images(addon_dir):
+            written["__manifest__.py"] = os.path.join(addon_dir, "__manifest__.py")
+
     return written
+
+
+def _load_logo_data_uri() -> Optional[str]:
+    """Read tools/nexterp_logo.png and return a ``data:image/png;base64,...``
+    URI suitable for inlining into the apps_icon SVG. The logo lives next
+    to this module on disk; if it's missing we return ``None`` and the
+    template falls back to the text wordmark.
+    """
+    import base64
+    here = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(here, "nexterp_logo.png")
+    if not os.path.exists(logo_path):
+        return None
+    with open(logo_path, "rb") as fh:
+        b64 = base64.b64encode(fh.read()).decode("ascii")
+    return f"data:image/png;base64,{b64}"
+
+
+_MANIFEST_IMAGES_LINE = '    "images": ["static/description/apps_icon.png"],\n'
+
+
+def _ensure_manifest_images(addon_dir: str) -> bool:
+    """Insert an ``images`` key into ``__manifest__.py`` if missing.
+
+    apps.odoo.com requires the manifest to point at the cover image
+    explicitly; otherwise the module page shows the "no cover image"
+    warning even when ``apps_icon.png`` is present. We do a small textual
+    insertion — safe because Odoo manifests are flat Python dicts with
+    a predictable indentation. Returns True when the file was modified.
+    """
+    manifest_path = os.path.join(addon_dir, "__manifest__.py")
+    if not os.path.exists(manifest_path):
+        return False
+    with open(manifest_path, "r", encoding="utf8") as fh:
+        text = fh.read()
+    if '"images"' in text or "'images'" in text:
+        return False  # already present
+
+    # Insert right after the ``"license"`` line if present, else right
+    # before the closing brace. Keeps the key near the other publishing
+    # metadata (license, price, currency).
+    new_line = _MANIFEST_IMAGES_LINE
+    license_pat = re.compile(r'^(\s*)"license"\s*:\s*"[^"]+",\s*\n', re.MULTILINE)
+    m = license_pat.search(text)
+    if m:
+        # Mirror license's indentation.
+        indent = m.group(1)
+        new_line = f'{indent}"images": ["static/description/apps_icon.png"],\n'
+        new_text = text[: m.end()] + new_line + text[m.end() :]
+    else:
+        # Fallback: insert before the final closing ``}``.
+        brace_idx = text.rfind("}")
+        if brace_idx < 0:
+            return False
+        new_text = text[:brace_idx] + new_line + text[brace_idx:]
+
+    with open(manifest_path, "w", encoding="utf8") as fh:
+        fh.write(new_text)
+    return True
 
 
 @click.command()
