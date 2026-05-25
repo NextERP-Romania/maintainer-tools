@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1058 595" width="{{ width }}" height="{{ height }}">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="{{ color_light }}"/>
+      <stop offset="100%" stop-color="{{ color_dark }}"/>
+    </linearGradient>
+  </defs>
+  <rect width="1058" height="595" fill="url(#bg)"/>
+
+  <!-- decorative blobs -->
+  <circle cx="900" cy="120" r="180" fill="#ffffff" opacity="0.08"/>
+  <circle cx="130" cy="500" r="120" fill="#ffffff" opacity="0.06"/>
+  <circle cx="980" cy="500" r="80"  fill="#ffffff" opacity="0.05"/>
+
+  <!-- icon medallion on the left -->
+  <g transform="translate(70 130)">
+    <rect width="336" height="336" rx="64" fill="#ffffff" opacity="0.96"/>
+    <text x="168" y="180"
+          font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+          font-size="{{ initials_font_size_banner }}"
+          font-weight="800"
+          fill="{{ color_dark }}"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          letter-spacing="-3">{{ initials }}</text>
+    <circle cx="280" cy="56" r="34" fill="{{ color_dark }}"/>
+    <text x="280" y="59"
+          font-family="Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif"
+          font-size="38"
+          text-anchor="middle"
+          dominant-baseline="middle">{{ emoji }}</text>
+  </g>
+
+  <!-- text block on the right -->
+  <text x="470" y="240"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="{{ title_font_size }}"
+        font-weight="800"
+        fill="#ffffff"
+        letter-spacing="-1">{{ name_line_1 }}</text>
+  {% if name_line_2 %}
+  <text x="470" y="{{ 240 + title_font_size + 10 }}"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="{{ title_font_size }}"
+        font-weight="800"
+        fill="#ffffff"
+        letter-spacing="-1">{{ name_line_2 }}</text>
+  {% endif %}
+
+  <text x="470" y="{{ 240 + title_font_size + (title_font_size + 10 if name_line_2 else 0) + 36 }}"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="22"
+        font-weight="500"
+        fill="#ffffff"
+        opacity="0.85">{{ category or 'Odoo App' }}</text>
+
+  {# ===== NextERP logo (bottom-right, on a white pill so the brand red
+       reads on every category gradient) =====
+       Embedded as a data: URI so cairosvg doesn't need to resolve a
+       file path at render time. ``logo_data_uri`` is computed Python-side
+       by the icon generator (read+base64 of tools/nexterp_logo.png). #}
+  {% if logo_data_uri %}
+  <g transform="translate(800 500)">
+    <rect x="0" y="0" width="218" height="70" rx="35" fill="#ffffff" opacity="0.94"/>
+    <image href="{{ logo_data_uri }}" x="14" y="6" width="190" height="58" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+  {% else %}
+  <text x="988" y="550"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="22"
+        font-weight="700"
+        fill="#ffffff"
+        opacity="0.8"
+        text-anchor="end"
+        letter-spacing="2">NextERP Romania</text>
+  {% endif %}
+</svg>

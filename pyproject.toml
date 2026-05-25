@@ -18,6 +18,10 @@ dependencies = [
     "freezegun",
     "github3.py>=1",
     "jinja2",
+    "markdown-it-py",  # for oca-gen-addon-readme branded HTML index
+    "cairosvg",  # for nexterp-gen-addon-icon SVG->PNG rasterization
+    "playwright",  # for nexterp-gen-screenshots (manual command, not a hook)
+    "lxml",  # for nexterp-gen-screenshots --discover (Odoo view XML scan)
     "manifestoo-core>=1.1",
     "PyYAML",
     "polib",
@@ -71,6 +75,10 @@ oca-update-pre-commit-excluded-addons = "tools.update_pre_commit_excluded_addons
 oca-fix-manifest-website = "tools.fix_manifest_website:main"
 oca-configure-travis= "tools.configure_travis:main"
 oca-copier-update = "tools.copier_update:main"
+nexterp-gen-addon-index-html = "tools.nexterp_gen_addon_index_html:main"
+nexterp-gen-addon-changelog = "tools.nexterp_gen_addon_changelog:main"
+nexterp-gen-addon-icon = "tools.nexterp_gen_addon_icon:main"
+nexterp-gen-screenshots = "tools.nexterp_gen_screenshots:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools"]
