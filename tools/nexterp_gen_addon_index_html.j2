@@ -53,13 +53,22 @@
     </div>
   </div>
 
-  {# ===== Tab nav (Bootstrap 5 pills — apps.odoo.com loads BS5 JS, so
-       data-bs-toggle="pill" handles the switching for free) ===== #}
-  <ul class="nav nav-pills justify-content-center mb-4 border-bottom pb-3" role="tablist">
+  {# ===== Tab nav (Bootstrap 5 pills — apps.odoo.com loads BS5 JS,
+       so data-bs-toggle="pill" handles the switching for free).
+
+       Critical: inline styles must be SYMMETRIC across all tabs.
+       Bootstrap's JS toggles the ``active`` class on click; inline
+       styles do NOT toggle, so a per-loop conditional style would
+       leave the first tab visually "active" forever even after the
+       user picks another one. We therefore put only structural inline
+       styles (border, padding, font-weight) on every link and let
+       Bootstrap paint the active state via its default
+       ``.nav-link.active`` rule (white text + brand-blue background). #}
+  <ul class="nav nav-pills justify-content-center mb-4 pb-3 border-bottom" role="tablist">
     {% set label_map = {'overview': 'Overview', 'features': 'Features', 'configure': 'Configuration', 'usage': 'How it works', 'screenshots': 'Screenshots', 'versions': 'Versions'} %}
     {% for tid in tab_ids %}
-    <li class="nav-item" role="presentation">
-      <a class="nav-link{% if loop.first %} active{% endif %} mx-1" id="nx-tab-{{ tid }}" data-bs-toggle="pill" data-bs-target="#nx-panel-{{ tid }}" href="#nx-panel-{{ tid }}" role="tab" aria-controls="nx-panel-{{ tid }}" aria-selected="{{ 'true' if loop.first else 'false' }}" style="color: #475569; font-weight: 600; padding: 8px 16px;">{{ label_map[tid] }}</a>
+    <li class="nav-item mx-1 mb-2" role="presentation">
+      <a class="nav-link{% if loop.first %} active{% endif %}" id="nx-tab-{{ tid }}" data-bs-toggle="pill" data-bs-target="#nx-panel-{{ tid }}" href="#nx-panel-{{ tid }}" role="tab" aria-controls="nx-panel-{{ tid }}" aria-selected="{{ 'true' if loop.first else 'false' }}" style="font-weight: 600; padding: 10px 22px; border: 1px solid #e2e8f0; border-radius: 999px;">{{ label_map[tid] }}</a>
     </li>
     {% endfor %}
   </ul>
