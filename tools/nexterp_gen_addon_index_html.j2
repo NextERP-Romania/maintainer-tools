@@ -119,9 +119,11 @@
     {% if 'configure' in tab_ids %}
     <div class="tab-pane fade{% if tab_ids[0] == 'configure' %} show active{% endif %}" id="nx-panel-configure" role="tabpanel" aria-labelledby="nx-tab-configure">
       <h2 class="mb-3" style="border-left: 4px solid #e11d48; font-weight: 700; padding-left: 16px;">Configuration</h2>
+      {% if fragments.CONFIGURE %}
       {{ fragments.CONFIGURE.body }}
+      {% endif %}
       {% if fragments.INSTALL %}
-      <hr class="my-4" />
+      {% if fragments.CONFIGURE %}<hr class="my-4" />{% endif %}
       {% if fragments.INSTALL.title %}<h3>{{ fragments.INSTALL.title }}</h3>{% endif %}
       {{ fragments.INSTALL.body }}
       {% endif %}
