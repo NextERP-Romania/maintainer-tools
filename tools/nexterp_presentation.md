@@ -2,7 +2,7 @@
   <div class="col-md-4 mb-3">
     <div class="border rounded p-4 h-100" style="background-color: #ffffff;">
       <div style="font-size: 2.4rem; font-weight: 800; color: #e11d48; line-height: 1;">10+</div>
-      <div class="text-muted mt-2" style="font-size: 0.9rem;">Years of Odoo expertise</div>
+      <div class="text-muted mt-2" style="font-size: 0.9rem;">Years of Odoo experience per team member</div>
     </div>
   </div>
   <div class="col-md-4 mb-3">
