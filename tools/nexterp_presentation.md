@@ -51,9 +51,3 @@
   </div>
 </div>
 
-<p class="text-center mt-4 mb-0">
-  <a href="https://www.nexterp.ro" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">Website — nexterp.ro</a>
-  <a href="mailto:contact@nexterp.ro" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">Email — contact@nexterp.ro</a>
-  <a href="https://www.nexterp.ro/helpdesk" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">Helpdesk</a>
-  <a href="https://apps.odoo.com/apps/browse?author=NextERP+Romania" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">All NextERP apps</a>
-</p>
