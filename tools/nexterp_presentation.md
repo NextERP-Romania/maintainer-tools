@@ -51,9 +51,9 @@
   </div>
 </div>
 
-<div class="d-flex flex-wrap justify-content-center mt-4" style="gap: 12px;">
-  <a href="https://www.nexterp.ro" target="_blank" rel="noopener" class="btn btn-outline-secondary" style="border-radius: 999px; padding: 8px 18px;">🌐 nexterp.ro</a>
-  <a href="mailto:contact@nexterp.ro" class="btn btn-outline-secondary" style="border-radius: 999px; padding: 8px 18px;">✉️ contact@nexterp.ro</a>
-  <a href="https://www.nexterp.ro/helpdesk" target="_blank" rel="noopener" class="btn btn-outline-secondary" style="border-radius: 999px; padding: 8px 18px;">🛟 Helpdesk</a>
-  <a href="https://apps.odoo.com/apps/browse?author=NextERP+Romania" target="_blank" rel="noopener" class="btn btn-outline-secondary" style="border-radius: 999px; padding: 8px 18px;">📦 All apps</a>
-</div>
+<p class="text-center mt-4 mb-0">
+  <a href="https://www.nexterp.ro" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">Website — nexterp.ro</a>
+  <a href="mailto:contact@nexterp.ro" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">Email — contact@nexterp.ro</a>
+  <a href="https://www.nexterp.ro/helpdesk" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">Helpdesk</a>
+  <a href="https://apps.odoo.com/apps/browse?author=NextERP+Romania" class="d-inline-block" style="margin: 4px 8px; padding: 8px 18px; border: 1px solid #cbd5e1; border-radius: 999px; color: #0f172a; font-weight: 600;">All NextERP apps</a>
+</p>
