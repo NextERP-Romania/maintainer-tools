@@ -134,9 +134,35 @@ RST2HTML_SETTINGS = {
 PANDOC_MARKDOWN_FORMAT = "gfm-raw_html-gfm_auto_identifiers"
 
 
+# Pin pandoc to a fixed version. Different pandoc releases reflow RST
+# (e.g. bullet-list spacing "-  x" vs "- x"), so an unpinned pandoc makes
+# the generated README.rst environment-dependent: the doc-refresh bot
+# (apt pandoc), local pre-commit and CI (pypandoc auto-downloads "latest")
+# disagree and fight each other on every run. Forcing one downloaded
+# binary -- pointed at via PYPANDOC_PANDOC so it wins over any system
+# pandoc on PATH -- makes the output byte-identical everywhere.
+# Override with NEXTERP_PANDOC_VERSION if a coordinated bump is needed.
+PINNED_PANDOC_VERSION = os.environ.get("NEXTERP_PANDOC_VERSION", "3.1.3")
+
+
 @functools.lru_cache(maxsize=None)
 def ensure_pandoc_installed() -> None:
-    pypandoc.ensure_pandoc_installed(delete_installer=True)
+    cache_root = os.environ.get(
+        "XDG_CACHE_HOME", os.path.join(os.path.expanduser("~"), ".cache")
+    )
+    targetfolder = os.path.join(
+        cache_root, "nexterp-maintainer-tools", "pandoc-" + PINNED_PANDOC_VERSION
+    )
+    binary = os.path.join(targetfolder, "pandoc")
+    if not os.path.isfile(binary):
+        os.makedirs(targetfolder, exist_ok=True)
+        pypandoc.download_pandoc(
+            version=PINNED_PANDOC_VERSION,
+            targetfolder=targetfolder,
+            delete_installer=True,
+        )
+    # Take precedence over a system/apt pandoc that may be on PATH.
+    os.environ["PYPANDOC_PANDOC"] = binary
 
 
 def make_runboat_badge(repo, branch):
